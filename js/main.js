@@ -34,9 +34,10 @@ var main_state = {
 
         // make a group of pipes
         this.pipes = this.game.add.group();
-        this.pipes.createMultiple(30, 'pipe');
+        this.pipes.createMultiple(60, 'pipe');
 
-
+        var pipeWidth = this.game.cache.getImage('pipe').width;
+        this.numberOfBlocks = parseInt(w/pipeWidth);
 
         // add a scoreboard
         this.score = 0;
@@ -62,13 +63,16 @@ var main_state = {
 
         // If the bird is out of the world (too high or too low), call the 'restart_game' function
 
-        if (this.bird.inWorld == false)
+        if (this.bird.inWorld == false) {
             this.restart_game();
+            this.bird.reset(this.getRelativeX(0.2), 245);
+        }
 
         this.game.physics.overlap(this.bird, this.pipes, this.hit_pipe, null, this);
 
         if (this.bird.angle < 20)
             this.bird.angle += 1;
+
     },
 
     // Make the bird jump
@@ -98,23 +102,26 @@ var main_state = {
         // get the first dead pipe of the group
         var pipe = this.pipes.getFirstDead();
 
-        // set the new position of the pipe
-        pipe.reset(x, y);
+        if (pipe !== null) {
 
-        // add velocity ot the pipe to make it move left
-        pipe.body.velocity.x = -700;
+            // set the new position of the pipe
+            pipe.reset(x, y);
 
-        // kill the pipe when its no longer visible
-        pipe.outOfBoundsKill = true;
+            // add velocity ot the pipe to make it move left
+            pipe.body.velocity.x = -700;
+
+            // kill the pipe when its no longer visible
+            pipe.outOfBoundsKill = true;
+        }
     },
 
     // add a row of pipes
     add_row_of_pipes: function() {
         var hole = Math.floor(Math.random()*5)+1;
 
-        for (var i = 0; i < 10; i++)
-            if (i != hole && i != hole + 1 && i != hole + 2)
-                this.add_one_pipe(this.getRelativeX(0.8), i*this.getRelativeX(0.07));
+        for (var i = 0; i < this.numberOfBlocks; i++)
+            if (i != hole && i != hole + 1 && i != hole + 2 && i != hole + 3 && i != hole + 4)
+                this.add_one_pipe(w, i*45);
 
         this.score += 1;
         this.label_score.content = this.score;
@@ -127,7 +134,7 @@ var main_state = {
     },
 
     getRelativeX: function(x) {
-        return x*w;
+        return x*w.toFixed(2);
     },
 
     hit_pipe: function() {
