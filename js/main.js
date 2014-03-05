@@ -1,6 +1,10 @@
+// get dimensions of the window considering retina displays
+var w = window.innerWidth,
+    h = window.innerHeight;
+
 // We start by initializing Phaser
 // Parameters: width of the game, height of the game, how to render the game, the HTML div that will contain the game
-var game = new Phaser.Game(500, 600, Phaser.AUTO, 'game_div');
+var game = new Phaser.Game(w, h, Phaser.AUTO, 'game_div');
 
 // And now we define our first and only state, I'll call it 'main'. A state is a specific scene of a game like a menu, a game over screen, etc.
 var main_state = {
@@ -20,17 +24,19 @@ var main_state = {
     create: function() {
         // This function will be called after the preload function. Here we set up the game, display sprites, add labels, etc.
         // display the bird on the screen
-        this.bird = this.game.add.sprite(100, 245, 'bird');
+        this.bird = this.game.add.sprite(this.getRelativeX(0.2), 245, 'bird');
 
         // adds gravity to make it fall.
-        this.bird.body.gravity.y = 1000;
+        this.bird.body.gravity.y = 1200;
+
+        // set center of gravity of bird
+        this.bird.anchor.setTo(-0.2, 0.5);
 
         // make a group of pipes
         this.pipes = this.game.add.group();
-        this.pipes.createMultiple(20, 'pipe');
+        this.pipes.createMultiple(30, 'pipe');
 
-        // add a pipe timer
-        this.timer = this.game.time.events.loop(1500, this.add_row_of_pipes, this);
+
 
         // add a scoreboard
         this.score = 0;
@@ -40,6 +46,15 @@ var main_state = {
         // bind the spacekey so it calls the jump function
         var space_key = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         space_key.onDown.add(this.jump, this);
+
+        // allow touch events for phone
+        this.game.input.onDown.add(this.jump, this);
+
+        this.goFullscreen();
+
+        // add a pipe timer
+        this.timer = this.game.time.events.loop(1500, this.add_row_of_pipes, this);
+
     },
 
     update: function() {
@@ -50,13 +65,23 @@ var main_state = {
         if (this.bird.inWorld == false)
             this.restart_game();
 
-        this.game.physics.overlap(this.bird, this.pipes, this.restart_game, null, this);
+        this.game.physics.overlap(this.bird, this.pipes, this.hit_pipe, null, this);
+
+        if (this.bird.angle < 20)
+            this.bird.angle += 1;
     },
 
     // Make the bird jump
     jump: function() {
+
+        if (this.bird.alive == false)
+            return;
+
         // add a vertical velocity to the bird
-        this.bird.body.velocity.y = -350;
+        this.bird.body.velocity.y = -400;
+
+        // create an animation on the bird
+        this.game.add.tween(this.bird).to({angle: -20}, 100).start();
     },
 
     // restart the game
@@ -77,7 +102,7 @@ var main_state = {
         pipe.reset(x, y);
 
         // add velocity ot the pipe to make it move left
-        pipe.body.velocity.x = -200;
+        pipe.body.velocity.x = -700;
 
         // kill the pipe when its no longer visible
         pipe.outOfBoundsKill = true;
@@ -88,11 +113,34 @@ var main_state = {
         var hole = Math.floor(Math.random()*5)+1;
 
         for (var i = 0; i < 10; i++)
-            if (i != hole && i != hole + 1)
-                this.add_one_pipe(400, i*60+10);
+            if (i != hole && i != hole + 1 && i != hole + 2)
+                this.add_one_pipe(this.getRelativeX(0.8), i*this.getRelativeX(0.07));
 
         this.score += 1;
         this.label_score.content = this.score;
+    },
+
+    goFullscreen: function() {
+        this.game.stage.scaleMode = Phaser.StageScaleMode.SHOW_ALL; //resize your window to see the stage resize too
+        this.game.stage.scale.setShowAll();
+        this.game.stage.scale.refresh();
+    },
+
+    getRelativeX: function(x) {
+        return x*w;
+    },
+
+    hit_pipe: function() {
+        // Set the alive property of the bird to false
+        this.bird.alive = false;
+
+        // Prevent new pipes from appearing
+        this.game.time.events.remove(this.timer);
+
+        // Go through all the pipes, and stop their movement
+        this.pipes.forEachAlive(function(p){
+            p.body.velocity.x = 0;
+        }, this);
     }
 }
 
