@@ -36,8 +36,8 @@ var main_state = {
         this.pipes = this.game.add.group();
         this.pipes.createMultiple(60, 'pipe');
 
-        var pipeWidth = this.game.cache.getImage('pipe').width;
-        this.numberOfBlocks = parseInt(w/pipeWidth);
+        var pipeHeight = this.game.cache.getImage('pipe').height;
+        this.numberOfBlocks = Math.ceil(h/pipeHeight);
 
         // add a scoreboard
         this.score = 0;
@@ -50,8 +50,6 @@ var main_state = {
 
         // allow touch events for phone
         this.game.input.onDown.add(this.jump, this);
-
-        this.goFullscreen();
 
         // add a pipe timer
         this.timer = this.game.time.events.loop(1500, this.add_row_of_pipes, this);
@@ -82,7 +80,7 @@ var main_state = {
             return;
 
         // add a vertical velocity to the bird
-        this.bird.body.velocity.y = -400;
+        this.bird.body.velocity.y = -600;
 
         // create an animation on the bird
         this.game.add.tween(this.bird).to({angle: -20}, 100).start();
@@ -117,20 +115,14 @@ var main_state = {
 
     // add a row of pipes
     add_row_of_pipes: function() {
-        var hole = Math.floor(Math.random()*5)+1;
+        var hole = Math.floor(Math.random()*this.numberOfBlocks-4)+1;
 
-        for (var i = 0; i < this.numberOfBlocks; i++)
+        for (var i = 0; i <= this.numberOfBlocks; i++)
             if (i != hole && i != hole + 1 && i != hole + 2 && i != hole + 3 && i != hole + 4)
                 this.add_one_pipe(w, i*45);
 
         this.score += 1;
         this.label_score.content = this.score;
-    },
-
-    goFullscreen: function() {
-        this.game.stage.scaleMode = Phaser.StageScaleMode.SHOW_ALL; //resize your window to see the stage resize too
-        this.game.stage.scale.setShowAll();
-        this.game.stage.scale.refresh();
     },
 
     getRelativeX: function(x) {
